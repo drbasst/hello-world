@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exponential-Motion Game - Mathematik lernen</title>
+    <style>
+        /* ========== GLOBAL STYLES ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* ========== HEADER ========== */
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* ========== MAIN CONTAINER ========== */
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+        }
+
+        /* ========== GAME AREA ========== */
+        .game-area {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        #gameCanvas {
+            width: 100%;
+            height: 500px;
+            border: 3px solid #1e3c72;
+            border-radius: 10px;
+            display: block;
+            background: #f0f8ff;
+        }
+
+        #plotCanvas {
+            width: 100%;
+            height: 200px;
+            border: 3px solid #2a5298;
+            border-radius: 10px;
+            display: block;
+            background: #ffffff;
+            margin-top: 15px;
+        }
+
+        /* ========== CONTROL PANEL ========== */
+        .controls {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            color: #1e3c72;
+        }
+
+        .control-section {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .control-section:last-child {
+            border-bottom: none;
+        }
+
+        .control-section h3 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            color: #1e3c72;
+        }
+
+        /* ========== BUTTONS ========== */
+        button {
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 5px;
+            text-transform: uppercase;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-start {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-stop {
+            background: #f44336;
+            color: white;
+            font-size: 1.3rem;
+            padding: 16px 32px;
+        }
+
+        .btn-reset {
+            background: #FF9800;
+            color: white;
+        }
+
+        .btn-demo {
+            background: #2196F3;
+            color: white;
+        }
+
+        .btn-preset {
+            background: #9C27B0;
+            color: white;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            display: block;
+            width: 100%;
+            margin: 5px 0;
+        }
+
+        .btn-export {
+            background: #607D8B;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        /* ========== INFO DISPLAYS ========== */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid #2196F3;
+        }
+
+        .info-label {
+            font-size: 0.85rem;
+            color: #555;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #1e3c72;
+        }
+
+        .target-box {
+            background: #fff3e0;
+            border-left-color: #FF9800;
+        }
+
+        .error-box {
+            background: #ffebee;
+            border-left-color: #f44336;
+        }
+
+        .score-box {
+            background: #e8f5e9;
+            border-left-color: #4CAF50;
+            grid-column: 1 / -1;
+        }
+
+        /* ========== PARAMETER CONTROLS ========== */
+        .param-control {
+            margin: 10px 0;
+        }
+
+        .param-control label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #1e3c72;
+        }
+
+        .param-control input[type="number"],
+        .param-control input[type="range"] {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #2196F3;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .param-control input[type="range"] {
+            padding: 0;
+        }
+
+        .range-value {
+            display: inline-block;
+            margin-left: 10px;
+            font-weight: bold;
+            color: #2196F3;
+        }
+
+        .param-control select {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #2196F3;
+            border-radius: 5px;
+            font-size: 1rem;
+            background: white;
+        }
+
+        .checkbox-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .checkbox-control input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        /* ========== FORMULA DISPLAY ========== */
+        .formula-display {
+            background: #fff9c4;
+            border: 3px solid #FFC107;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            color: #1e3c72;
+        }
+
+        .formula-title {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        .formula-math {
+            font-size: 1.2rem;
+            line-height: 1.8;
+        }
+
+        /* ========== HELP PANEL ========== */
+        .help-panel {
+            background: #e1f5fe;
+            border: 3px solid #03A9F4;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            color: #1e3c72;
+        }
+
+        .help-panel h4 {
+            color: #0277BD;
+            margin-bottom: 10px;
+        }
+
+        .help-panel ul {
+            margin-left: 20px;
+        }
+
+        .help-panel li {
+            margin: 5px 0;
+        }
+
+        .help-toggle {
+            background: #03A9F4;
+            color: white;
+            font-size: 0.9rem;
+            width: 100%;
+        }
+
+        /* ========== HIGHSCORE TABLE ========== */
+        .highscore-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 0.9rem;
+        }
+
+        .highscore-table th,
+        .highscore-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .highscore-table th {
+            background: #2196F3;
+            color: white;
+        }
+
+        .highscore-table tr:nth-child(even) {
+            background: #f5f5f5;
+        }
+
+        /* ========== RESPONSIVE DESIGN ========== */
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            #gameCanvas {
+                height: 400px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            #gameCanvas {
+                height: 300px;
+            }
+
+            #plotCanvas {
+                height: 150px;
+            }
+        }
+
+        /* ========== STATUS MESSAGES ========== */
+        .status-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            font-weight: bold;
+            animation: slideIn 0.3s ease-out;
+            z-index: 1000;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .status-message.error {
+            background: #f44336;
+        }
+
+        .status-message.success {
+            background: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🎯 Exponential-Motion Game</h1>
+        <p class="subtitle">Lerne Exponentialfunktionen spielerisch kennen!</p>
+    </header>
+
+    <div class="container">
+        <!-- GAME AREA -->
+        <div class="game-area">
+            <div class="canvas-wrapper">
+                <canvas id="gameCanvas"></canvas>
+            </div>
+
+            <!-- FORMULA DISPLAY -->
+            <div class="formula-display">
+                <div class="formula-title">📐 Bewegungsformel</div>
+                <div class="formula-math" id="formulaDisplay">
+                    y(t) = y₀ + v₀·t + A·(a<sup>t</sup> - 1) / ln(a)
+                </div>
+            </div>
+
+            <!-- INFO GRID -->
+            <div class="info-grid">
+                <div class="info-box">
+                    <div class="info-label">Zeit (t)</div>
+                    <div class="info-value" id="timeDisplay">0.00 s</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Aktuelle Höhe (y)</div>
+                    <div class="info-value" id="heightDisplay">0.0 px</div>
+                </div>
+                <div class="info-box target-box">
+                    <div class="info-label">Zielhöhe (H)</div>
+                    <div class="info-value" id="targetDisplay">0.0 px</div>
+                </div>
+                <div class="info-box error-box">
+                    <div class="info-label">Fehler (Δ)</div>
+                    <div class="info-value" id="errorDisplay">0.0 px</div>
+                </div>
+                <div class="info-box score-box">
+                    <div class="info-label">Score (Runde / Gesamt)</div>
+                    <div class="info-value" id="scoreDisplay">0 / 0</div>
+                </div>
+            </div>
+
+            <!-- MINI PLOT -->
+            <canvas id="plotCanvas"></canvas>
+
+            <!-- MAIN CONTROLS -->
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="btn-start" id="btnStart">▶ Start</button>
+                <button class="btn-stop" id="btnStop" disabled>⏹ STOP (Leertaste)</button>
+                <button class="btn-reset" id="btnReset">🔄 Reset</button>
+                <button class="btn-demo" id="btnDemo">👁 Demo</button>
+            </div>
+        </div>
+
+        <!-- CONTROL PANEL -->
+        <div class="controls">
+            <!-- PRESETS -->
+            <div class="control-section">
+                <h3>🎮 Voreinstellungen</h3>
+                <button class="btn-preset" data-preset="growth">📈 Wachstum (a > 1)</button>
+                <button class="btn-preset" data-preset="decay">📉 Zerfall (0 < a < 1)</button>
+                <button class="btn-preset" data-preset="strong-growth">🚀 Starkes Wachstum</button>
+                <button class="btn-preset" data-preset="slow-decay">🍂 Langsamer Zerfall</button>
+            </div>
+
+            <!-- PARAMETERS -->
+            <div class="control-section">
+                <h3>⚙️ Parameter</h3>
+
+                <div class="param-control">
+                    <label for="baseA">Basis a (Exponent):</label>
+                    <input type="number" id="baseA" min="0.1" max="5" step="0.1" value="1.5">
+                    <small style="color: #666;">a > 1: Wachstum, 0 < a < 1: Zerfall</small>
+                </div>
+
+                <div class="param-control">
+                    <label for="amplitudeA">Amplitude A:</label>
+                    <input type="number" id="amplitudeA" min="1" max="200" step="1" value="50">
+                </div>
+
+                <div class="param-control">
+                    <label for="initialY">Starthöhe y₀:</label>
+                    <input type="number" id="initialY" min="0" max="400" step="10" value="50">
+                </div>
+
+                <div class="param-control">
+                    <label for="initialV">Startgeschw. v₀:</label>
+                    <input type="number" id="initialV" min="-50" max="50" step="1" value="0">
+                </div>
+
+                <div class="param-control">
+                    <label for="targetHeight">Zielhöhe H:</label>
+                    <input type="number" id="targetHeight" min="50" max="450" step="10" value="300">
+                </div>
+
+                <div class="checkbox-control">
+                    <input type="checkbox" id="randomExponent">
+                    <label for="randomExponent">Zufälliger Exponent jede Runde</label>
+                </div>
+
+                <div class="checkbox-control">
+                    <input type="checkbox" id="useEForm">
+                    <label for="useEForm">e-Form verwenden (e<sup>kt</sup>)</label>
+                </div>
+            </div>
+
+            <!-- CLASSROOM MODE -->
+            <div class="control-section">
+                <h3>🎓 Unterrichtsmodus</h3>
+                <div class="info-box">
+                    <div class="info-label">Runden gespielt</div>
+                    <div class="info-value" id="roundsPlayed">0</div>
+                </div>
+                <div class="info-box" style="margin-top: 10px;">
+                    <div class="info-label">Durchschnitts-Score</div>
+                    <div class="info-value" id="avgScore">0.0</div>
+                </div>
+                <button class="btn-export" style="width: 100%; margin-top: 10px;" id="btnExport">
+                    💾 Ergebnisse exportieren (CSV)
+                </button>
+                <button class="btn-reset" style="width: 100%; margin-top: 5px; font-size: 0.85rem;" id="btnClearHistory">
+                    🗑 Verlauf löschen
+                </button>
+            </div>
+
+            <!-- HELP PANEL -->
+            <div class="control-section">
+                <button class="help-toggle" id="btnToggleHelp">❓ Hilfe anzeigen</button>
+                <div class="help-panel" id="helpPanel" style="display: none; margin-top: 10px;">
+                    <h4>📚 Exponentialfunktionen verstehen</h4>
+                    <ul>
+                        <li><strong>Wachstum (a > 1):</strong> Die Kurve steigt exponentiell an</li>
+                        <li><strong>Zerfall (0 < a < 1):</strong> Die Kurve nähert sich asymptotisch einem Grenzwert</li>
+                        <li><strong>y-Achsen-Schnitt:</strong> Bei t=0 ist y = y₀</li>
+                        <li><strong>Parameter A:</strong> Steuert die Stärke der Exponentialfunktion</li>
+                        <li><strong>Parameter v₀:</strong> Lineare Komponente der Bewegung</li>
+                    </ul>
+                    <h4>🎮 Spielanleitung</h4>
+                    <ul>
+                        <li>Drücke <strong>Start</strong> um das Spiel zu beginnen</li>
+                        <li>Der Punkt bewegt sich automatisch nach oben</li>
+                        <li>Drücke <strong>STOP</strong> (oder Leertaste) wenn die Zielhöhe erreicht ist</li>
+                        <li>Je genauer du triffst, desto mehr Punkte erhältst du!</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========================================================================
+        // MODUL 1: PHYSIK/MODELL - Exponentialfunktionen-Berechnungen
+        // ========================================================================
+
+        const PhysicsModel = {
+            /**
+             * Berechnet die vertikale Position nach der a-Form:
+             * y(t) = y₀ + v₀·t + A·(a^t - 1) / ln(a)
+             *
+             * Für a → 1 verwenden wir den Grenzwert über die e-Form
+             */
+            calculateY_AForm(t, y0, v0, A, a) {
+                // Grenzfall: wenn a sehr nahe bei 1, verwende lineare Näherung
+                if (Math.abs(a - 1) < 0.001) {
+                    return y0 + v0 * t + A * t;
+                }
+
+                const lnA = Math.log(a);
+                const exponentialTerm = A * (Math.pow(a, t) - 1) / lnA;
+                return y0 + v0 * t + exponentialTerm;
+            },
+
+            /**
+             * Berechnet die vertikale Position nach der e-Form:
+             * y(t) = y₀ + v₀·t + (v_e/k)·(e^(k·t) - 1)
+             *
+             * Wobei k = ln(a) und v_e = A·ln(a)
+             */
+            calculateY_EForm(t, y0, v0, ve, k) {
+                // Grenzfall: wenn k sehr klein, verwende lineare Näherung
+                if (Math.abs(k) < 0.001) {
+                    return y0 + v0 * t + ve * t;
+                }
+
+                const exponentialTerm = (ve / k) * (Math.exp(k * t) - 1);
+                return y0 + v0 * t + exponentialTerm;
+            },
+
+            /**
+             * Konvertiert Parameter von a-Form zu e-Form
+             */
+            convertToEForm(A, a) {
+                const k = Math.log(a);
+                const ve = A * k;
+                return { k, ve };
+            },
+
+            /**
+             * Berechnet die Ableitung dy/dt für Geschwindigkeitsanzeige
+             */
+            calculateVelocity(t, v0, A, a) {
+                if (Math.abs(a - 1) < 0.001) {
+                    return v0 + A;
+                }
+                return v0 + A * Math.pow(a, t);
+            }
+        };
+
+        // ========================================================================
+        // MODUL 2: GAME STATE - Spielzustand und Logik
+        // ========================================================================
+
+        const GameState = {
+            // Spielparameter
+            params: {
+                y0: 50,           // Starthöhe (unten)
+                v0: 0,            // Startgeschwindigkeit vertikal
+                A: 50,            // Amplitude der Exponentialfunktion
+                a: 1.5,           // Basis (Exponent)
+                vx: 80,           // Horizontale Geschwindigkeit (konstant)
+                targetHeight: 300, // Zielhöhe
+                useEForm: false,  // Verwende e^(kt) statt a^t
+                randomExponent: false // Zufälliger Exponent pro Runde
+            },
+
+            // Spielzustand
+            state: {
+                isRunning: false,
+                isDemo: false,
+                startTime: 0,
+                currentTime: 0,
+                x: 0,
+                y: 0,
+                score: 0,
+                totalScore: 0,
+                roundsPlayed: 0,
+                history: [] // Für CSV Export
+            },
+
+            // Initialisiert eine neue Runde
+            initRound() {
+                this.state.startTime = Date.now();
+                this.state.currentTime = 0;
+                this.state.x = 0;
+                this.state.y = this.params.y0;
+                this.state.score = 0;
+
+                // Wenn zufälliger Exponent aktiviert, generiere neuen Wert
+                if (this.params.randomExponent) {
+                    // 50% Chance für Wachstum (a > 1) oder Zerfall (0 < a < 1)
+                    if (Math.random() > 0.5) {
+                        // Wachstum: a zwischen 1.1 und 3.0
+                        this.params.a = 1.1 + Math.random() * 1.9;
+                    } else {
+                        // Zerfall: a zwischen 0.3 und 0.9
+                        this.params.a = 0.3 + Math.random() * 0.6;
+                    }
+                    this.updateFormulaDisplay();
+                }
+            },
+
+            // Aktualisiert Position basierend auf verstrichener Zeit
+            update() {
+                if (!this.state.isRunning) return;
+
+                this.state.currentTime = (Date.now() - this.state.startTime) / 1000;
+                const t = this.state.currentTime;
+
+                // Horizontale Bewegung (konstant)
+                this.state.x = this.params.vx * t;
+
+                // Vertikale Bewegung (Exponentialfunktion)
+                if (this.params.useEForm) {
+                    const { k, ve } = PhysicsModel.convertToEForm(this.params.A, this.params.a);
+                    this.state.y = PhysicsModel.calculateY_EForm(
+                        t, this.params.y0, this.params.v0, ve, k
+                    );
+                } else {
+                    this.state.y = PhysicsModel.calculateY_AForm(
+                        t, this.params.y0, this.params.v0, this.params.A, this.params.a
+                    );
+                }
+            },
+
+            // Stoppt das Spiel und berechnet Score
+            stop() {
+                if (!this.state.isRunning) return;
+
+                this.state.isRunning = false;
+                this.state.isDemo = false;
+
+                // Berechne Fehler und Score
+                const error = Math.abs(this.state.y - this.params.targetHeight);
+                const alpha = 2; // Sensitivitätsfaktor
+                this.state.score = Math.max(0, Math.round(100 - alpha * error));
+                this.state.totalScore += this.state.score;
+                this.state.roundsPlayed++;
+
+                // Speichere für Export
+                this.state.history.push({
+                    round: this.state.roundsPlayed,
+                    a: this.params.a.toFixed(3),
+                    A: this.params.A,
+                    y0: this.params.y0,
+                    v0: this.params.v0,
+                    H: this.params.targetHeight,
+                    t_stop: this.state.currentTime.toFixed(3),
+                    y_stop: this.state.y.toFixed(2),
+                    delta: error.toFixed(2),
+                    score: this.state.score
+                });
+
+                // Zeige Ergebnis-Nachricht
+                this.showStatusMessage();
+            },
+
+            // Zeigt Status-Nachricht an
+            showStatusMessage() {
+                const msg = document.createElement('div');
+                msg.className = 'status-message';
+
+                if (this.state.score >= 80) {
+                    msg.className += ' success';
+                    msg.textContent = `🎉 Hervorragend! Score: ${this.state.score}`;
+                } else if (this.state.score >= 50) {
+                    msg.textContent = `👍 Gut! Score: ${this.state.score}`;
+                } else {
+                    msg.className += ' error';
+                    msg.textContent = `💪 Versuch's nochmal! Score: ${this.state.score}`;
+                }
+
+                document.body.appendChild(msg);
+                setTimeout(() => msg.remove(), 3000);
+            },
+
+            // Aktualisiert Formel-Anzeige
+            updateFormulaDisplay() {
+                const display = document.getElementById('formulaDisplay');
+                const a = this.params.a.toFixed(2);
+                const A = this.params.A;
+                const y0 = this.params.y0;
+                const v0 = this.params.v0;
+
+                if (this.params.useEForm) {
+                    const { k, ve } = PhysicsModel.convertToEForm(A, this.params.a);
+                    display.innerHTML = `y(t) = ${y0} + ${v0}·t + (${ve.toFixed(1)}/${k.toFixed(3)})·(e<sup>${k.toFixed(3)}·t</sup> - 1)`;
+                } else {
+                    display.innerHTML = `y(t) = ${y0} + ${v0}·t + ${A}·(${a}<sup>t</sup> - 1) / ln(${a})`;
+                }
+            },
+
+            // Exportiert Ergebnisse als CSV
+            exportCSV() {
+                if (this.state.history.length === 0) {
+                    alert('Keine Daten zum Exportieren vorhanden!');
+                    return;
+                }
+
+                let csv = 'Runde,a,A,y0,v0,H,t_stop,y_stop,delta,score\n';
+                this.state.history.forEach(row => {
+                    csv += `${row.round},${row.a},${row.A},${row.y0},${row.v0},${row.H},${row.t_stop},${row.y_stop},${row.delta},${row.score}\n`;
+                });
+
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `exponential-game-${new Date().toISOString().slice(0,10)}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+            },
+
+            // Löscht Verlauf
+            clearHistory() {
+                if (confirm('Möchtest du wirklich den gesamten Verlauf löschen?')) {
+                    this.state.history = [];
+                    this.state.totalScore = 0;
+                    this.state.roundsPlayed = 0;
+                    UI.updateDisplays();
+                }
+            }
+        };
+
+        // ========================================================================
+        // MODUL 3: RENDERING - Canvas-Zeichnung
+        // ========================================================================
+
+        const Renderer = {
+            gameCanvas: null,
+            gameCtx: null,
+            plotCanvas: null,
+            plotCtx: null,
+
+            // Initialisiert Canvas
+            init() {
+                this.gameCanvas = document.getElementById('gameCanvas');
+                this.plotCanvas = document.getElementById('plotCanvas');
+                this.gameCtx = this.gameCanvas.getContext('2d');
+                this.plotCtx = this.plotCanvas.getContext('2d');
+
+                this.resizeCanvas();
+                window.addEventListener('resize', () => this.resizeCanvas());
+            },
+
+            // Passt Canvas-Größe an
+            resizeCanvas() {
+                // Game Canvas
+                const gameRect = this.gameCanvas.getBoundingClientRect();
+                this.gameCanvas.width = gameRect.width;
+                this.gameCanvas.height = gameRect.height;
+
+                // Plot Canvas
+                const plotRect = this.plotCanvas.getBoundingClientRect();
+                this.plotCanvas.width = plotRect.width;
+                this.plotCanvas.height = plotRect.height;
+            },
+
+            // Zeichnet Spielbereich
+            drawGame() {
+                const ctx = this.gameCtx;
+                const w = this.gameCanvas.width;
+                const h = this.gameCanvas.height;
+
+                // Hintergrund
+                ctx.fillStyle = '#f0f8ff';
+                ctx.fillRect(0, 0, w, h);
+
+                // Koordinatensystem: y=0 ist unten, nach oben positiv
+                // Canvas: y=0 ist oben, also müssen wir invertieren
+                const canvasY = (gameY) => h - gameY;
+
+                // Zielhöhe zeichnen
+                const targetY = canvasY(GameState.params.targetHeight);
+                ctx.strokeStyle = '#FF9800';
+                ctx.lineWidth = 3;
+                ctx.setLineDash([10, 5]);
+                ctx.beginPath();
+                ctx.moveTo(0, targetY);
+                ctx.lineTo(w, targetY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Label für Zielhöhe
+                ctx.fillStyle = '#FF9800';
+                ctx.font = 'bold 16px Arial';
+                ctx.fillText(`Ziel: ${GameState.params.targetHeight} px`, 10, targetY - 10);
+
+                // Y-Achse und Markierungen
+                ctx.strokeStyle = '#1e3c72';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(30, 0);
+                ctx.lineTo(30, h);
+                ctx.stroke();
+
+                // Y-Achsen-Beschriftung
+                ctx.fillStyle = '#1e3c72';
+                ctx.font = '12px Arial';
+                for (let y = 0; y <= 500; y += 100) {
+                    const cy = canvasY(y);
+                    if (cy >= 0 && cy <= h) {
+                        ctx.beginPath();
+                        ctx.moveTo(25, cy);
+                        ctx.lineTo(35, cy);
+                        ctx.stroke();
+                        ctx.fillText(y.toString(), 5, cy + 5);
+                    }
+                }
+
+                // Y-Achsen-Schnitt markieren (bei t=0, y=y₀)
+                const y0_canvas = canvasY(GameState.params.y0);
+                ctx.fillStyle = '#9C27B0';
+                ctx.beginPath();
+                ctx.arc(30, y0_canvas, 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillText('y₀', 40, y0_canvas + 5);
+
+                // Bewegungspfad (Trajektorie)
+                if (GameState.state.currentTime > 0) {
+                    ctx.strokeStyle = 'rgba(33, 150, 243, 0.5)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+
+                    const steps = 50;
+                    for (let i = 0; i <= steps; i++) {
+                        const t = (GameState.state.currentTime / steps) * i;
+                        const x = GameState.params.vx * t;
+                        let y;
+
+                        if (GameState.params.useEForm) {
+                            const { k, ve } = PhysicsModel.convertToEForm(
+                                GameState.params.A, GameState.params.a
+                            );
+                            y = PhysicsModel.calculateY_EForm(
+                                t, GameState.params.y0, GameState.params.v0, ve, k
+                            );
+                        } else {
+                            y = PhysicsModel.calculateY_AForm(
+                                t, GameState.params.y0, GameState.params.v0,
+                                GameState.params.A, GameState.params.a
+                            );
+                        }
+
+                        const cx = Math.min(x, w - 20);
+                        const cy = canvasY(y);
+
+                        if (i === 0) {
+                            ctx.moveTo(cx, cy);
+                        } else {
+                            ctx.lineTo(cx, cy);
+                        }
+                    }
+                    ctx.stroke();
+                }
+
+                // Der bewegliche Punkt
+                const pointX = Math.min(GameState.state.x, w - 20);
+                const pointY = canvasY(GameState.state.y);
+
+                // Schatten
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.beginPath();
+                ctx.arc(pointX + 2, pointY + 2, 12, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Punkt
+                const gradient = ctx.createRadialGradient(pointX, pointY, 2, pointX, pointY, 10);
+                gradient.addColorStop(0, '#FFD700');
+                gradient.addColorStop(1, '#FF6B00');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(pointX, pointY, 10, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Punkt-Umrandung
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Aktuelle Höhe als Text beim Punkt
+                if (GameState.state.isRunning) {
+                    ctx.fillStyle = '#1e3c72';
+                    ctx.font = 'bold 14px Arial';
+                    ctx.fillText(
+                        `${GameState.state.y.toFixed(1)} px`,
+                        pointX + 15,
+                        pointY - 15
+                    );
+                }
+            },
+
+            // Zeichnet y(t)-Diagramm
+            drawPlot() {
+                const ctx = this.plotCtx;
+                const w = this.plotCanvas.width;
+                const h = this.plotCanvas.height;
+
+                // Hintergrund
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, w, h);
+
+                // Achsen
+                const marginLeft = 50;
+                const marginBottom = 30;
+                const marginTop = 20;
+                const marginRight = 20;
+                const plotWidth = w - marginLeft - marginRight;
+                const plotHeight = h - marginTop - marginBottom;
+
+                // Achsen zeichnen
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(marginLeft, marginTop);
+                ctx.lineTo(marginLeft, h - marginBottom);
+                ctx.lineTo(w - marginRight, h - marginBottom);
+                ctx.stroke();
+
+                // Beschriftung
+                ctx.fillStyle = '#333';
+                ctx.font = 'bold 14px Arial';
+                ctx.fillText('y(t)', 5, 15);
+                ctx.fillText('t', w - 30, h - 5);
+
+                // Zeit-Bereich für Plot (zeige die nächsten 5 Sekunden)
+                const maxT = Math.max(5, GameState.state.currentTime + 1);
+                const maxY = Math.max(500, GameState.params.targetHeight + 100);
+
+                // Gitter
+                ctx.strokeStyle = '#e0e0e0';
+                ctx.lineWidth = 1;
+
+                // Horizontale Gitterlinien
+                for (let y = 0; y <= maxY; y += 100) {
+                    const py = marginTop + plotHeight * (1 - y / maxY);
+                    ctx.beginPath();
+                    ctx.moveTo(marginLeft, py);
+                    ctx.lineTo(w - marginRight, py);
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#666';
+                    ctx.font = '10px Arial';
+                    ctx.fillText(y.toString(), 5, py + 3);
+                }
+
+                // Vertikale Gitterlinien
+                for (let t = 0; t <= maxT; t += 1) {
+                    const px = marginLeft + plotWidth * (t / maxT);
+                    ctx.beginPath();
+                    ctx.moveTo(px, marginTop);
+                    ctx.lineTo(px, h - marginBottom);
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#666';
+                    ctx.font = '10px Arial';
+                    ctx.fillText(t.toFixed(1), px - 10, h - 10);
+                }
+
+                // Zielhöhe als horizontale Linie
+                const targetPy = marginTop + plotHeight * (1 - GameState.params.targetHeight / maxY);
+                ctx.strokeStyle = '#FF9800';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(marginLeft, targetPy);
+                ctx.lineTo(w - marginRight, targetPy);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // y(t)-Kurve zeichnen
+                ctx.strokeStyle = '#2196F3';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+
+                const steps = 200;
+                for (let i = 0; i <= steps; i++) {
+                    const t = (maxT / steps) * i;
+                    let y;
+
+                    if (GameState.params.useEForm) {
+                        const { k, ve } = PhysicsModel.convertToEForm(
+                            GameState.params.A, GameState.params.a
+                        );
+                        y = PhysicsModel.calculateY_EForm(
+                            t, GameState.params.y0, GameState.params.v0, ve, k
+                        );
+                    } else {
+                        y = PhysicsModel.calculateY_AForm(
+                            t, GameState.params.y0, GameState.params.v0,
+                            GameState.params.A, GameState.params.a
+                        );
+                    }
+
+                    const px = marginLeft + plotWidth * (t / maxT);
+                    const py = marginTop + plotHeight * (1 - Math.min(y, maxY) / maxY);
+
+                    if (i === 0) {
+                        ctx.moveTo(px, py);
+                    } else {
+                        ctx.lineTo(px, py);
+                    }
+                }
+                ctx.stroke();
+
+                // Aktueller Punkt auf der Kurve
+                if (GameState.state.currentTime > 0) {
+                    const currentPx = marginLeft + plotWidth * (GameState.state.currentTime / maxT);
+                    const currentPy = marginTop + plotHeight * (1 - Math.min(GameState.state.y, maxY) / maxY);
+
+                    ctx.fillStyle = '#FF6B00';
+                    ctx.beginPath();
+                    ctx.arc(currentPx, currentPy, 5, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+
+                // Y-Achsen-Schnitt markieren (t=0, y=y₀)
+                const y0Px = marginLeft;
+                const y0Py = marginTop + plotHeight * (1 - GameState.params.y0 / maxY);
+                ctx.fillStyle = '#9C27B0';
+                ctx.beginPath();
+                ctx.arc(y0Px, y0Py, 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Legende
+                ctx.fillStyle = '#333';
+                ctx.font = 'bold 11px Arial';
+                const a = GameState.params.a;
+                const growthType = a > 1 ? '📈 Wachstum' : a < 1 ? '📉 Zerfall' : '➡ Linear';
+                ctx.fillText(`${growthType} (a = ${a.toFixed(2)})`, marginLeft + 10, marginTop + 15);
+            },
+
+            // Haupt-Render-Schleife
+            render() {
+                this.drawGame();
+                this.drawPlot();
+            }
+        };
+
+        // ========================================================================
+        // MODUL 4: UI - Benutzeroberfläche
+        // ========================================================================
+
+        const UI = {
+            // Initialisiert alle Event-Listener
+            init() {
+                // Buttons
+                document.getElementById('btnStart').addEventListener('click', () => this.startGame());
+                document.getElementById('btnStop').addEventListener('click', () => this.stopGame());
+                document.getElementById('btnReset').addEventListener('click', () => this.resetGame());
+                document.getElementById('btnDemo').addEventListener('click', () => this.startDemo());
+                document.getElementById('btnExport').addEventListener('click', () => GameState.exportCSV());
+                document.getElementById('btnClearHistory').addEventListener('click', () => GameState.clearHistory());
+                document.getElementById('btnToggleHelp').addEventListener('click', () => this.toggleHelp());
+
+                // Presets
+                document.querySelectorAll('.btn-preset').forEach(btn => {
+                    btn.addEventListener('click', () => this.applyPreset(btn.dataset.preset));
+                });
+
+                // Parameter-Inputs
+                document.getElementById('baseA').addEventListener('change', (e) => {
+                    GameState.params.a = parseFloat(e.target.value);
+                    GameState.updateFormulaDisplay();
+                });
+
+                document.getElementById('amplitudeA').addEventListener('change', (e) => {
+                    GameState.params.A = parseFloat(e.target.value);
+                    GameState.updateFormulaDisplay();
+                });
+
+                document.getElementById('initialY').addEventListener('change', (e) => {
+                    GameState.params.y0 = parseFloat(e.target.value);
+                    GameState.updateFormulaDisplay();
+                });
+
+                document.getElementById('initialV').addEventListener('change', (e) => {
+                    GameState.params.v0 = parseFloat(e.target.value);
+                    GameState.updateFormulaDisplay();
+                });
+
+                document.getElementById('targetHeight').addEventListener('change', (e) => {
+                    GameState.params.targetHeight = parseFloat(e.target.value);
+                });
+
+                document.getElementById('randomExponent').addEventListener('change', (e) => {
+                    GameState.params.randomExponent = e.target.checked;
+                });
+
+                document.getElementById('useEForm').addEventListener('change', (e) => {
+                    GameState.params.useEForm = e.target.checked;
+                    GameState.updateFormulaDisplay();
+                });
+
+                // Tastatur-Steuerung
+                document.addEventListener('keydown', (e) => {
+                    if (e.code === 'Space') {
+                        e.preventDefault();
+                        if (GameState.state.isRunning && !GameState.state.isDemo) {
+                            this.stopGame();
+                        }
+                    }
+                });
+
+                // Initiale Anzeige
+                this.updateDisplays();
+                GameState.updateFormulaDisplay();
+            },
+
+            // Startet das Spiel
+            startGame() {
+                GameState.initRound();
+                GameState.state.isRunning = true;
+                GameState.state.isDemo = false;
+
+                document.getElementById('btnStart').disabled = true;
+                document.getElementById('btnStop').disabled = false;
+                document.getElementById('btnReset').disabled = true;
+            },
+
+            // Stoppt das Spiel
+            stopGame() {
+                GameState.stop();
+
+                document.getElementById('btnStart').disabled = false;
+                document.getElementById('btnStop').disabled = true;
+                document.getElementById('btnReset').disabled = false;
+
+                this.updateDisplays();
+            },
+
+            // Setzt das Spiel zurück
+            resetGame() {
+                GameState.state.isRunning = false;
+                GameState.state.isDemo = false;
+                GameState.state.currentTime = 0;
+                GameState.state.x = 0;
+                GameState.state.y = GameState.params.y0;
+                GameState.state.score = 0;
+
+                document.getElementById('btnStart').disabled = false;
+                document.getElementById('btnStop').disabled = true;
+                document.getElementById('btnReset').disabled = false;
+
+                this.updateDisplays();
+            },
+
+            // Startet Demo-Modus
+            startDemo() {
+                GameState.initRound();
+                GameState.state.isRunning = true;
+                GameState.state.isDemo = true;
+
+                document.getElementById('btnStart').disabled = true;
+                document.getElementById('btnStop').disabled = true;
+                document.getElementById('btnReset').disabled = true;
+                document.getElementById('btnDemo').textContent = '⏸ Demo läuft...';
+
+                // Demo läuft automatisch für 10 Sekunden
+                setTimeout(() => {
+                    if (GameState.state.isDemo) {
+                        GameState.state.isRunning = false;
+                        GameState.state.isDemo = false;
+                        document.getElementById('btnStart').disabled = false;
+                        document.getElementById('btnStop').disabled = true;
+                        document.getElementById('btnReset').disabled = false;
+                        document.getElementById('btnDemo').textContent = '👁 Demo';
+                    }
+                }, 10000);
+            },
+
+            // Wendet Preset an
+            applyPreset(preset) {
+                switch(preset) {
+                    case 'growth':
+                        GameState.params.a = 1.5;
+                        GameState.params.A = 50;
+                        GameState.params.v0 = 0;
+                        GameState.params.y0 = 50;
+                        GameState.params.targetHeight = 300;
+                        break;
+                    case 'decay':
+                        GameState.params.a = 0.6;
+                        GameState.params.A = 100;
+                        GameState.params.v0 = 50;
+                        GameState.params.y0 = 50;
+                        GameState.params.targetHeight = 250;
+                        break;
+                    case 'strong-growth':
+                        GameState.params.a = 2.5;
+                        GameState.params.A = 30;
+                        GameState.params.v0 = 0;
+                        GameState.params.y0 = 50;
+                        GameState.params.targetHeight = 350;
+                        break;
+                    case 'slow-decay':
+                        GameState.params.a = 0.85;
+                        GameState.params.A = 80;
+                        GameState.params.v0 = 30;
+                        GameState.params.y0 = 50;
+                        GameState.params.targetHeight = 200;
+                        break;
+                }
+
+                // Update UI
+                document.getElementById('baseA').value = GameState.params.a;
+                document.getElementById('amplitudeA').value = GameState.params.A;
+                document.getElementById('initialY').value = GameState.params.y0;
+                document.getElementById('initialV').value = GameState.params.v0;
+                document.getElementById('targetHeight').value = GameState.params.targetHeight;
+
+                GameState.updateFormulaDisplay();
+                this.resetGame();
+            },
+
+            // Aktualisiert alle Anzeigen
+            updateDisplays() {
+                document.getElementById('timeDisplay').textContent =
+                    GameState.state.currentTime.toFixed(2) + ' s';
+
+                document.getElementById('heightDisplay').textContent =
+                    GameState.state.y.toFixed(1) + ' px';
+
+                document.getElementById('targetDisplay').textContent =
+                    GameState.params.targetHeight.toFixed(1) + ' px';
+
+                const error = Math.abs(GameState.state.y - GameState.params.targetHeight);
+                document.getElementById('errorDisplay').textContent =
+                    error.toFixed(1) + ' px';
+
+                document.getElementById('scoreDisplay').textContent =
+                    `${GameState.state.score} / ${GameState.state.totalScore}`;
+
+                document.getElementById('roundsPlayed').textContent =
+                    GameState.state.roundsPlayed;
+
+                const avgScore = GameState.state.roundsPlayed > 0
+                    ? (GameState.state.totalScore / GameState.state.roundsPlayed).toFixed(1)
+                    : '0.0';
+                document.getElementById('avgScore').textContent = avgScore;
+            },
+
+            // Hilfe ein-/ausblenden
+            toggleHelp() {
+                const panel = document.getElementById('helpPanel');
+                const btn = document.getElementById('btnToggleHelp');
+
+                if (panel.style.display === 'none') {
+                    panel.style.display = 'block';
+                    btn.textContent = '❌ Hilfe ausblenden';
+                } else {
+                    panel.style.display = 'none';
+                    btn.textContent = '❓ Hilfe anzeigen';
+                }
+            }
+        };
+
+        // ========================================================================
+        // MODUL 5: MAIN LOOP - Haupt-Spiel-Schleife
+        // ========================================================================
+
+        function gameLoop() {
+            GameState.update();
+            UI.updateDisplays();
+            Renderer.render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // ========================================================================
+        // INITIALISIERUNG
+        // ========================================================================
+
+        window.addEventListener('DOMContentLoaded', () => {
+            Renderer.init();
+            UI.init();
+            gameLoop();
+        });
+    </script>
+</body>
+</html>
