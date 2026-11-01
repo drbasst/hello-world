@@ -4,6 +4,8 @@ Stand: 01.11.2026. Diese Notizen bereiten eine spätere Sitzung vor, in der das 
 
 > **Hinweis zur Quellenlage:** Die Handbuch-PDFs ließen sich aus der Cloud-Umgebung nicht abrufen (Netzwerksperre). Alles unten stammt aus Suchergebnis-Auszügen von Handbuch-Kopien und Testberichten. Punkte mit **(prüfen)** sind nicht bestätigt und müssen am Gerät oder im Handbuch nachgesehen werden.
 
+> **Update 01.11.2026:** Es gibt doch einen Weg, das Graphite vom Rechner aus zu programmieren — über einen offiziellen Samson-Editor und über ein bereits reverse-engineertes SysEx-Protokoll. Siehe **`protocol.md`** (Protokoll) und **`graphite_sysex.py`** (Schreib-Werkzeug). Abschnitt 2 unten ist entsprechend korrigiert.
+
 ## 1. Das Kernproblem
 
 GarageBand auf dem iPad kann **keine** Hardware-Regler frei zuweisen (kein „MIDI Learn“ für Smart Controls). Laut Berichten reagiert es nur auf:
@@ -22,14 +24,14 @@ GarageBand auf dem iPad kann **keine** Hardware-Regler frei zuweisen (kein „MI
 
 ## 2. Was über das Graphite 49 bekannt ist
 
-- **Bedienelemente:** 49 Tasten, 8 Drehregler (E1 bis E8), 9 Schieber (S1 bis S9), 16 Taster, Transport-Tasten. Die Pads werden je nach Quelle mit 4 oder 8 angegeben (2 Bänke) (prüfen).
-- **Programmierung:** Nur am Gerät. Es gibt keinen offiziellen Software-Editor und keine dokumentierte SysEx-Schnittstelle. Per USB kann man also auslesen, was das Gerät sendet, aber nicht von außen umprogrammieren.
+- **Bedienelemente:** 49 Tasten, 8 Drehregler (E1 bis E8), 9 Schieber (S1 bis S9), 16 Taster, Transport-Tasten und **8 Pads** in zwei Bänken A/B zu je 4 (bestätigt über die Hardware-IDs im Protokoll).
+- **Programmierung (korrigiert):** Es gibt **beides** — einen offiziellen Samson-Editor (Windows V1.92, Mac v1.3.0) UND ein reverse-engineertes SysEx-Protokoll (`protocol.md`). Damit lässt sich das Gerät vom Rechner aus per USB umprogrammieren, nicht nur am Gerät selbst. Das SysEx-Wissen bezieht sich auf **Firmware 1.42 („Version 1")**; Geräte mit „Version 2" (anderes LCD) können abweichen — **zuerst die Firmware-Version prüfen** (beide TRANSPOSE beim Einschalten).
 - **Presets:** Es gibt 30 Presets:
   - Preset 1 ist das „Graphite“-Grundpreset: Drehregler senden CC 10 (Pan) und Schieber CC 7 (Volume), auf den Kanälen 1 bis 8 (je Regler ein Kanal).
   - Presets 2 bis 10 sind für bestimmte DAWs (Logic, Cubase, Pro Tools usw., Mackie Control oder HUI). Diese Programme gibt es auf dem iPad nicht.
   - Presets 11 bis 30 sind User-Presets. **Nur diese sind frei programmierbar.**
   - Ältere Testberichte nennen eine andere Aufteilung, das hängt vermutlich von der Firmware ab (prüfen).
-- **Pads:** Werksseitig spielen die Pads Drum-Noten auf **MIDI-Kanal 10**. Die genauen Notennummern sind unbekannt (prüfen).
+- **Pads:** Werksseitig spielen die Pads Drum-Noten auf **MIDI-Kanal 10**. Die genauen Notennummern sind im reverse-engineerten Material nicht gelistet und werden in der USB-Sitzung per `dump`/Monitor ausgelesen (prüfen).
 - **Setup-Modus:**
   - Starten mit der Taste **SETUP**. Das Keyboard sendet dann kein MIDI, und die ersten 17 Tasten werden zu Funktions- und Zifferntasten (Beschriftung über den Tasten).
   - Je Regler, Pad oder Taster stellt man Port, Kanal, Typ, Modus und Control-Code (CC-Nummer) ein.
@@ -64,11 +66,15 @@ Die Drum-Notennummern folgen dem General-MIDI-Standard, den die GarageBand-Drum-
 Voraussetzung: Das Graphite hängt per USB an einem Mac oder Linux-Rechner, der über Remote Control mit dieser Claude-Sitzung verbunden ist. Das iPad hilft hier nicht, weil Claude darauf keine Befehle ausführen kann.
 
 1. `python3 -m pip install mido python-rtmidi` installieren.
-2. `python3 graphite49/midi_monitor.py --list` zeigt die MIDI-Ports.
-3. `python3 graphite49/midi_monitor.py` starten. Dann jeden Regler, Schieber, jedes Pad und jeden Taster einmal bewegen. Das Skript protokolliert Typ, Kanal und Nummer in `graphite49/capture.csv`.
-4. Mit dieser Liste wird die echte Ist-Belegung im Abschnitt 2 eingetragen, und die (prüfen)-Punkte werden geklärt.
-5. Am Gerät im Setup-Modus Preset 11 nach Abschnitt 4 programmieren (Claude führt Schritt für Schritt). Mit dem Monitor prüfen, ob jedes Element jetzt das Richtige sendet.
-6. Am iPad in GarageBand testen.
+2. **Firmware-Version prüfen:** beide TRANSPOSE-Tasten beim Einschalten halten. Ist es nicht „Version 1" (1.xx, z. B. 1.42), kann das SysEx-Protokoll abweichen — dann vorsichtig vorgehen und nur mit Rücklesen arbeiten.
+3. `python3 graphite49/graphite_sysex.py ports` und `… identity` — prüft, ob Gerät und Ports stimmen.
+4. **Bestehende User-Presets sichern:** für jedes Preset 11..30 `python3 graphite49/graphite_sysex.py dump N > backup_presetN.txt`. (Die Werkseinstellung lässt sich sonst nur schwer wiederherstellen.)
+5. Ist-Belegung ansehen: `graphite_sysex.py dump 1` zeigt das Grundpreset. Alternativ `midi_monitor.py` zum Mitschneiden beim Bewegen der Regler (klärt u. a. die Pad-Notennummern).
+6. Ziel-Preset schreiben: am Gerät ein **User-Preset (11..30)** laden, dann mit `graphite_sysex.py set …` die Elemente nach Abschnitt 4 setzen (Werkzeug liest jeweils zurück), danach `graphite_sysex.py save 11`.
+7. Gerät **ordentlich über den Schalter** ausschalten (sonst wird nicht gespeichert).
+8. Am iPad in GarageBand testen.
+
+Hinweis: Schritt 6 geht wahlweise auch über den offiziellen Samson Graphite Editor (GUI) oder am Gerät im Setup-Modus. Der SysEx-Weg ist der direkteste für diese Sitzung, einige Schreib-Operationen sind aber rekonstruiert — daher immer zurücklesen.
 
 ## 5a. Alternative: REAPER-MCP
 
@@ -79,7 +85,7 @@ Falls später ein REAPER-MCP-Server verbunden ist (REAPER läuft auf dem Rechner
 3. Über das MCP die aufgenommenen MIDI-Events des Items auslesen (Typ, Kanal, Note bzw. CC). Das ergibt dieselbe Liste wie `capture.csv`.
 4. Danach weiter mit Schritt 4 aus Abschnitt 5.
 
-Was ein REAPER-MCP genau kann, hängt vom jeweiligen Server ab. Das muss in der Sitzung anhand seiner Werkzeuge geprüft werden. Auch damit lässt sich das Graphite nicht umprogrammieren (keine SysEx-Schnittstelle bekannt), es dient nur zum Auslesen und Testen.
+Was ein REAPER-MCP genau kann, hängt vom jeweiligen Server ab. Das muss in der Sitzung anhand seiner Werkzeuge geprüft werden. Zum Umprogrammieren selbst nutzen wir das SysEx-Werkzeug (`graphite_sysex.py`, siehe `protocol.md`); REAPER dient hier nur zum bequemen Auslesen und Testen der gesendeten MIDI-Daten.
 
 ## 6. Alternative ohne Umprogrammieren (auf dem iPad)
 
@@ -94,3 +100,4 @@ Was ein REAPER-MCP genau kann, hängt vom jeweiligen Server ab. Das muss in der 
 - Apple, GarageBand iPad und MIDI: <https://support.apple.com/guide/garageband-ipad/chs39282dbe/ipados>
 - Apple Community, unterstützte CCs: <https://discussions.apple.com/thread/4666875>
 - StreamByter: <https://apps.apple.com/app/streambyter/id1398712641>
+- **SysEx-Protokoll (reverse engineered), alxwk/samson_sysex:** <https://github.com/alxwk/samson_sysex> — Grundlage für `protocol.md` und `graphite_sysex.py`

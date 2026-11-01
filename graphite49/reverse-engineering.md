@@ -1,9 +1,16 @@
 # Graphite 49: Reverse Engineering (rea + Ghidra)
 
+> **Update 01.11.2026:** Das meiste ist nicht mehr nötig. Das SysEx-Protokoll
+> für Firmware 1.42 ist bereits reverse-engineered (siehe `protocol.md`,
+> Projekt alxwk/samson_sysex), und es gibt einen offiziellen Samson-Editor
+> (Windows/Mac). Damit lässt sich das Gerät direkt programmieren. Ghidra bleibt
+> nur als **Rückfalloption** relevant, falls das Gerät die **„Version 2"-Firmware**
+> (anderes LCD) hat und sich das Protokoll dort unterscheidet — dann kann man
+> die Unterschiede aus dem offiziellen Editor-Binary ableiten. Der untenstehende
+> Stufenplan gilt für genau diesen Fall.
+
 Ziel: Herausfinden, ob und wie sich das Graphite 49 per USB vom Rechner aus
-programmieren lässt. Samson liefert kein Editor-Tool und keine dokumentierte
-SysEx-Schnittstelle, also muss das Protokoll selbst ermittelt werden. Es geht um
-eigene Hardware zum Zweck der Interoperabilität.
+programmieren lässt. Es geht um eigene Hardware zum Zweck der Interoperabilität.
 
 ## Was wahrscheinlich geht und was nicht
 
