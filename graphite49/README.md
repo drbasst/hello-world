@@ -70,6 +70,17 @@ Voraussetzung: Das Graphite hängt per USB an einem Mac oder Linux-Rechner, der 
 5. Am Gerät im Setup-Modus Preset 11 nach Abschnitt 4 programmieren (Claude führt Schritt für Schritt). Mit dem Monitor prüfen, ob jedes Element jetzt das Richtige sendet.
 6. Am iPad in GarageBand testen.
 
+## 5a. Alternative: REAPER-MCP
+
+Falls später ein REAPER-MCP-Server verbunden ist (REAPER läuft auf dem Rechner, an dem das Graphite per USB hängt), geht Schritt 2 und 3 auch ohne Python:
+
+1. In REAPER unter Einstellungen > MIDI-Geräte den Graphite-Eingang aktivieren.
+2. Eine Spur mit Aufnahme-Eingang „Graphite 49 / alle Kanäle“ anlegen, scharf schalten und aufnehmen, während alle Regler, Pads und Taster nacheinander bewegt werden.
+3. Über das MCP die aufgenommenen MIDI-Events des Items auslesen (Typ, Kanal, Note bzw. CC). Das ergibt dieselbe Liste wie `capture.csv`.
+4. Danach weiter mit Schritt 4 aus Abschnitt 5.
+
+Was ein REAPER-MCP genau kann, hängt vom jeweiligen Server ab. Das muss in der Sitzung anhand seiner Werkzeuge geprüft werden. Auch damit lässt sich das Graphite nicht umprogrammieren (keine SysEx-Schnittstelle bekannt), es dient nur zum Auslesen und Testen.
+
 ## 6. Alternative ohne Umprogrammieren (auf dem iPad)
 
 - **MidiFire oder StreamByter** (iOS-Apps von Audeonic) können CC-Befehle in Echtzeit umbiegen, bevor sie in GarageBand ankommen. Die Regeln liegen in `streambyter_rules.txt`. Das ändert aber nichts an der Grenze aus Abschnitt 1.
