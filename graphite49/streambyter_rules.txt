@@ -1,0 +1,10 @@
+# StreamByter / MidiFire rules (iPad): Graphite 49 preset 1 -> GarageBand
+# Preset 1 sends knobs E1-E8 as CC10 and faders as CC7, each on channels 1-8.
+# GarageBand ignores the channel, so all of them would control the same thing.
+# These rules (UNTESTED, adjust once the real assignment has been captured):
+
+# Knob E1 (CC10 on channel 1) -> modulation CC1
+B0 0A = B0 01
+# Pads on channel 10 -> channel 1 (GarageBand is omni, kept only for other apps)
+# 99 = 90
+# 89 = 80
